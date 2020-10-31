@@ -18,11 +18,11 @@ public class CDS {
         // else saveToFile("output",result);
         ArrayList<Point> rest = (ArrayList<Point>)points.clone();
         ArrayList<Point> result = new ArrayList<Point>();
-        boolean readFromFile = true;
+        boolean readFromFile = false;
 
         if (readFromFile) result = readFromFile("output73.points");
 
-		/*
+
 		while (!rest.isEmpty()){
 			Point kimK=rest.get(0);
 			for (Point p: rest)
@@ -35,7 +35,7 @@ public class CDS {
 					i--;
 				}
 		}
-		*/
+
 
 		/*
 		for(Point point : points) {
@@ -51,7 +51,7 @@ public class CDS {
         int essais = 0;
         int reussites = 0;
         int score = result.size();
-        int n = 9;
+        int n = 3;
         while(result.size() > 75) {
             while((essais < 50) || (reussites / essais > 0.05)) {
                 System.out.println("n = " + n);
