@@ -1,6 +1,5 @@
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -19,7 +18,7 @@ public class Steiner {
     /**
      * Objet représentatn une arete de graphe
      */
-    private class Arete {
+    public class Arete {
         public Point p1;
         public Point p2;
         public Double longueur;
@@ -561,12 +560,14 @@ public class Steiner {
 
     /**
      * Méthode appellée par le programme pour construire un arbre de steiner sans budget
+     * @return
      */
-    public Tree2D calculSteiner(ArrayList<Point> points, int edgeThreshold, ArrayList<Point> hitPoints) {
+    public LinkedList<Arete> calculSteiner(ArrayList<Point> points, int edgeThreshold, ArrayList<Point> hitPoints) {
         // On appelle la méthode permettant de creer une arbre de Steiner
         LinkedList<Arete> aretes_steiner = simpleSteiner(points, edgeThreshold, hitPoints);
 
-        return edgesToTree(aretes_steiner, aretes_steiner.get(0).p1);
+        //return edgesToTree(aretes_steiner, aretes_steiner.get(0).p1);
+        return aretes_steiner;
     }
 
     /**

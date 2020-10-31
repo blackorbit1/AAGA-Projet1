@@ -1,19 +1,38 @@
+import javafx.application.Application;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.awt.Point;
+import java.util.LinkedList;
 
 public class Main {
     public static void main(String [] args){
         ArrayList<Point> points = readPointsFromFile("/Users/enzoportable/Documents/AAGA/Projet1/input.points");
         int edgeThreshold = 60;
 
-        for(Point point : points){
-            System.out.println(point);
-        }
+        ResultDisplay.points = points;
+        ResultDisplay.edgeThreshold = 60;
 
-        (new CDS()).calculDominatingSet(points, edgeThreshold);
+        //new Thread(() -> { Application.launch(ResultDisplay.class, args); }).start();
+        Application.launch(ResultDisplay.class, args);
+
+        /*
+        ArrayList<Point> hitPoints = (new CDS()).calculDominatingSet(points, edgeThreshold);
+        System.out.println(hitPoints);
+
+        LinkedList<Steiner.Arete> steiner = new Steiner().calculSteiner(points, edgeThreshold, hitPoints);
+        System.out.println(steiner);
+
+        ResultDisplay.draw_steiner(steiner);
+
+         */
+
+
+
+
+        //(new CDS()).calculDominatingSet(points, edgeThreshold);
 
     }
 

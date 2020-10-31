@@ -19,22 +19,29 @@ public class CDS {
         ArrayList<Point> rest = (ArrayList<Point>)points.clone();
         ArrayList<Point> result = new ArrayList<Point>();
         boolean readFromFile = false;
+        boolean enhance = false;
 
         if (readFromFile) result = readFromFile("output73.points");
 
+        System.out.println(1);
 
-		while (!rest.isEmpty()){
-			Point kimK=rest.get(0);
-			for (Point p: rest)
-				if (neighbours(p,rest,edgeThreshold)>neighbours(kimK,rest,edgeThreshold))
-					kimK=p;
-			result.add(kimK);
-			for (int i=0;i<rest.size();i++)
-				if (rest.get(i).distance(kimK)<=edgeThreshold){
-					rest.remove(i);
-					i--;
-				}
-		}
+        if(!readFromFile){
+            while (!rest.isEmpty()){
+                Point kimK=rest.get(0);
+                for (Point p: rest)
+                    if (neighbours(p,rest,edgeThreshold)>neighbours(kimK,rest,edgeThreshold))
+                        kimK=p;
+                result.add(kimK);
+                for (int i=0;i<rest.size();i++)
+                    if (rest.get(i).distance(kimK)<=edgeThreshold){
+                        rest.remove(i);
+                        i--;
+                    }
+            }
+        }
+        System.out.println(2);
+
+
 
 
 		/*
@@ -46,32 +53,36 @@ public class CDS {
 
         //int NB_PTS_A_PLACER = 80;
 
-        System.out.println("Score : "+result.size());
+        if(enhance) {
+            System.out.println("Score : "+result.size());
 
-        int essais = 0;
-        int reussites = 0;
-        int score = result.size();
-        int n = 3;
-        while(result.size() > 75) {
-            while((essais < 50) || (reussites / essais > 0.05)) {
-                System.out.println("n = " + n);
-                System.out.println("essais = " + essais);
-                System.out.println("reussites = " + reussites);
-                System.out.println("--- --- ---");
-                result = replaceNred(n, result, points, edgeThreshold);
+            int essais = 0;
+            int reussites = 0;
+            int score = result.size();
+            int n = 3;
+            while(result.size() > 75) {
+                while((essais < 50) || (reussites / essais > 0.05)) {
+                    System.out.println("n = " + n);
+                    System.out.println("essais = " + essais);
+                    System.out.println("reussites = " + reussites);
+                    System.out.println("--- --- ---");
+                    result = replaceNred(n, result, points, edgeThreshold);
 
 
-                essais++;
-                if(result.size() < score) {
-                    reussites++;
-                    saveToFile("output",result);
+                    essais++;
+                    if(result.size() < score) {
+                        reussites++;
+                        saveToFile("output",result);
+                    }
+                    score = result.size();
                 }
-                score = result.size();
+                essais = 0;
+                reussites = 0;
+                n++;
             }
-            essais = 0;
-            reussites = 0;
-            n++;
         }
+
+
 
 
         System.out.println("fin");
