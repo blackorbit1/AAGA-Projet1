@@ -1,5 +1,8 @@
+import javafx.application.Platform;
+
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -19,11 +22,10 @@ public class CDS {
         ArrayList<Point> rest = (ArrayList<Point>)points.clone();
         ArrayList<Point> result = new ArrayList<Point>();
         boolean readFromFile = false;
-        boolean enhance = false;
+        boolean enhance = true;
 
         if (readFromFile) result = readFromFile("output73.points");
 
-        System.out.println(1);
 
         if(!readFromFile){
             while (!rest.isEmpty()){
@@ -39,7 +41,26 @@ public class CDS {
                     }
             }
         }
-        System.out.println(2);
+        int score = result.size();
+
+
+        LinkedList<Steiner.Arete> steiner = new Steiner().calculSteiner(points, edgeThreshold, result);
+        final LinkedList<Steiner.Arete> steiner_final = (LinkedList<Steiner.Arete>) steiner.clone();
+        final int score_final = score;
+        Platform.runLater(new Runnable() {
+            @Override public void run() {
+                ResultDisplay.display_li_al(steiner_final, score_final);
+            }
+        });
+        //ResultDisplay.display_li_al(steiner);
+        /*
+        final LinkedList<Steiner.Arete> steiner_final = (LinkedList<Steiner.Arete>) steiner.clone();
+        new Thread(() -> {
+
+            ResultDisplay.display_li_al(steiner_final);
+        }).start();
+        */
+
 
 
 
@@ -58,7 +79,6 @@ public class CDS {
 
             int essais = 0;
             int reussites = 0;
-            int score = result.size();
             int n = 3;
             while(result.size() > 75) {
                 while((essais < 50) || (reussites / essais > 0.05)) {
@@ -72,7 +92,23 @@ public class CDS {
                     essais++;
                     if(result.size() < score) {
                         reussites++;
-                        saveToFile("output",result);
+                        steiner = new Steiner().calculSteiner(points, edgeThreshold, result);
+                        final LinkedList<Steiner.Arete> steiner_final2 = (LinkedList<Steiner.Arete>) steiner.clone();
+                        final int score_final2 = score;
+                        Platform.runLater(new Runnable() {
+                            @Override public void run() {
+                                ResultDisplay.display_li_al(steiner_final2, score_final2);
+                            }
+                        });
+                        //ResultDisplay.display_li_al(steiner);
+                        /*
+                        final LinkedList<Steiner.Arete> steiner_final2 = (LinkedList<Steiner.Arete>) steiner.clone();
+                        new Thread(() -> {
+
+                            ResultDisplay.display_li_al(steiner_final2);
+                        }).start();
+                        */
+                        //saveToFile("output",result);
                     }
                     score = result.size();
                 }

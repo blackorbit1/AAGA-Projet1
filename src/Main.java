@@ -36,6 +36,16 @@ public class Main {
 
     }
 
+    public static LinkedList<Steiner.Arete> calculLiAl(ArrayList<Point> points, int edgeThreshold){
+        ArrayList<Point> hitPoints = (new CDS()).calculDominatingSet(points, edgeThreshold);
+        //System.out.println(hitPoints);
+
+        LinkedList<Steiner.Arete> steiner = new Steiner().calculSteiner(points, edgeThreshold, hitPoints);
+        //System.out.println(steiner);
+
+        return steiner;
+    }
+
     private static ArrayList<Point> readPointsFromFile(String filename){
         ArrayList<Point> points = new ArrayList<Point>();
 
