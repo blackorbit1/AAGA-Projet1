@@ -79,11 +79,18 @@ public class ResultDisplay extends Application {
         gc.setStroke(Color.RED);
         gc.setLineWidth(3);
 
+        ArrayList<Point> points_cds = new ArrayList<Point>();
+        for(Steiner.Arete arete : aretes){
+            if(!points_cds.contains(arete.p1)) points_cds.add(arete.p1);
+            if(!points_cds.contains(arete.p2)) points_cds.add(arete.p2);
+        }
+
         for(Steiner.Arete arete : aretes){
             gc.strokeLine(arete.p1.x, arete.p1.y, arete.p2.x, arete.p2.y);
         }
 
-        Label label_score = new Label("Score : " + score);
+        System.out.println(">>>> Le score : " + points_cds.size());
+        Label label_score = new Label("Score : " + points_cds.size());
         label_score.setTranslateY(-(height/2 - 100));
         label_score.setTranslateX(-(width/2 - 100));
         label_score.setFont(new Font(20));

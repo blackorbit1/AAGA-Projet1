@@ -1,4 +1,5 @@
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 
 import java.awt.Point;
 import java.util.ArrayList;
@@ -12,8 +13,31 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Random;
+import java.util.concurrent.*;
 
 public class CDS {
+
+    public class Simulation extends Thread {
+        private int n;
+        private ArrayList<Point> old_result;
+        private ArrayList<Point> points;
+        private int edgeThreshold;
+        private ArrayList<Point> result;
+
+        ArrayList<Point> getResult() {return result;}
+
+        Simulation (int n, ArrayList<Point> old_result, ArrayList<Point> points, int edgeThreshold, String name, ThreadGroup tg) {
+            super(tg,name);
+
+            this.n = n;
+            this.old_result = old_result;
+            this.points = points;
+            this.edgeThreshold = edgeThreshold;
+        }
+        public void run() {
+            result = replaceNred(n, old_result, points, edgeThreshold);
+        }
+    }
 
 
     public ArrayList<Point> calculDominatingSet(ArrayList<Point> points, int edgeThreshold) {
@@ -23,6 +47,7 @@ public class CDS {
         ArrayList<Point> result = new ArrayList<Point>();
         boolean readFromFile = false;
         boolean enhance = true;
+        int number_of_threads = 4;
 
         if (readFromFile) result = readFromFile("output73.points");
 
@@ -74,19 +99,72 @@ public class CDS {
 
         //int NB_PTS_A_PLACER = 80;
 
+        int np = Runtime.getRuntime().availableProcessors();
+
         if(enhance) {
             System.out.println("Score : "+result.size());
 
             int essais = 0;
             int reussites = 0;
             int n = 3;
-            while(result.size() > 75) {
-                while((essais < 50) || (reussites / essais > 0.05)) {
+            while(result.size() > 8) {
+                while((essais < (300/np)) || (reussites / essais > 0.05)) {
                     System.out.println("n = " + n);
                     System.out.println("essais = " + essais);
                     System.out.println("reussites = " + reussites);
                     System.out.println("--- --- ---");
-                    result = replaceNred(n, result, points, edgeThreshold);
+                    //result = replaceNred(n, result, points, edgeThreshold);
+
+
+
+
+
+
+
+                    ThreadGroup tg = new ThreadGroup("main");
+
+                    List<Simulation> sims = new ArrayList<Simulation>();
+                    for (int i=0;i<np;i++) sims.add(new Simulation(n, result, points, edgeThreshold,"PI"+i, tg));
+
+                    int i=0;
+                    while (i<sims.size()){
+                        if (tg.activeCount()<np){ // do we have available CPUs?
+                            Simulation sim = sims.get(i);
+                            sim.start();
+                            i++;
+                        } else {
+                            try {Thread.sleep(100);} /*wait 0.1 second before checking again*/
+                            catch (InterruptedException e) {e.printStackTrace();}
+                        }
+
+                    }
+
+                    // on ne va pas attendre que tous les threads terminent pour commencer à récupérer les résultats
+                    /*
+                    while(tg.activeCount()>0) { // wait for threads to finish
+                        try {Thread.sleep(100);}
+                        catch (InterruptedException e) {e.printStackTrace();}
+                    }
+                    */
+
+                    while(tg.activeCount()>0){
+                        for (i=0;i<sims.size();i++) {
+                            Simulation sim = sims.get(i);
+                            ArrayList<Point> sim_result = sim.getResult();
+                            if(sim_result != null && sim_result.size() < result.size()){
+                                result = sim_result;
+                                for(Simulation sim_to_stop : sims){
+                                    sim_to_stop.stop();
+                                }
+                            }
+                        }
+                    }
+
+
+
+
+
+
 
 
                     essais++;
@@ -100,15 +178,7 @@ public class CDS {
                                 ResultDisplay.display_li_al(steiner_final2, score_final2);
                             }
                         });
-                        //ResultDisplay.display_li_al(steiner);
-                        /*
-                        final LinkedList<Steiner.Arete> steiner_final2 = (LinkedList<Steiner.Arete>) steiner.clone();
-                        new Thread(() -> {
-
-                            ResultDisplay.display_li_al(steiner_final2);
-                        }).start();
-                        */
-                        //saveToFile("output",result);
+                        saveToFile("output",result);
                     }
                     score = result.size();
                 }
@@ -238,7 +308,7 @@ public class CDS {
         System.out.println("new_result.size() >= score : " + (new_result.size() >= score));
 
         int tentatives = 0;
-        while(!(new_result.size() < score) && (tentatives++ < 50)) {
+        while(!(new_result.size() < score) && (tentatives++ < 20)) {
             //System.out.println("--new iteration");
             ArrayList<Point> red_to_replace = new ArrayList<>();
             int iterations = 0;// Pour éviter que ça boucle à l'infini si on est dans une mauvaise situation

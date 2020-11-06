@@ -5,17 +5,77 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.awt.Point;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static java.lang.Thread.sleep;
 
 public class Main {
     public static void main(String [] args){
         ArrayList<Point> points = readPointsFromFile("/Users/enzoportable/Documents/AAGA/Projet1/input.points");
-        int edgeThreshold = 60;
+        int edgeThreshold = 55;
+
+
 
         ResultDisplay.points = points;
-        ResultDisplay.edgeThreshold = 60;
+        ResultDisplay.edgeThreshold = edgeThreshold;
 
-        //new Thread(() -> { Application.launch(ResultDisplay.class, args); }).start();
+
+
+        /////////////////////////////////
+
+        /*
+
+
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+        Set<Callable<String>> callables = new HashSet<Callable<String>>();
+
+        callables.add(new Callable<String>() {
+            public String call() throws Exception {
+                sleep(100000);
+                return "Task 1";
+            }
+        });
+        callables.add(new Callable<String>() {
+            public String call() throws Exception {
+                sleep(100000);
+                return "Task 2";
+            }
+        });
+        callables.add(new Callable<String>() {
+            public String call() throws Exception {
+                return "Task 3";
+            }
+        });
+
+        try {
+            ArrayList<Future<String>> taskList = new ArrayList<>();
+            BlockingQueue q = new SynchronousQueue();
+            taskList.add(executors.submit(new Task1(q)));
+            taskList.add(executors.submit(new Task2(q)));
+
+            Object took = q.take();
+            for (Future<String> task : taskList) {
+                if (!task.isDone()) {
+                    task.cancel(true);
+                }
+            }
+            System.out.println("Got " + took);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Test.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+         */
+
+        /////////////////////////////////
+
+        ////new Thread(() -> { Application.launch(ResultDisplay.class, args); }).start();
         Application.launch(ResultDisplay.class, args);
 
         /*
@@ -32,7 +92,7 @@ public class Main {
 
 
 
-        //(new CDS()).calculDominatingSet(points, edgeThreshold);
+        (new CDS()).calculDominatingSet(points, edgeThreshold);
 
     }
 
