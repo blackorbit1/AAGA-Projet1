@@ -40,6 +40,12 @@ public class ResultDisplay extends Application {
     }
 
 
+
+    public static void display_rectangle(int finalX_min, int finalX_max, int finalY_min, int finalY_max) {
+
+    }
+
+
     @Override
     public void start(Stage primaryStage) {
         stage = primaryStage;
@@ -71,7 +77,7 @@ public class ResultDisplay extends Application {
         stage.show();
     }
 
-    public static void display_li_al(LinkedList<Steiner.Arete> aretes, int score){
+    public static void display_li_al(LinkedList<Steiner.Arete> aretes){
         Stage stage = getStage();
         Canvas canvas = new Canvas(width, height);
         GraphicsContext gc = canvas.getGraphicsContext2D() ;
@@ -89,7 +95,7 @@ public class ResultDisplay extends Application {
             gc.strokeLine(arete.p1.x, arete.p1.y, arete.p2.x, arete.p2.y);
         }
 
-        System.out.println(">>>> Le score : " + points_cds.size());
+        //System.out.println(">>>> Le score : " + points_cds.size());
         Label label_score = new Label("Score : " + points_cds.size());
         label_score.setTranslateY(-(height/2 - 100));
         label_score.setTranslateX(-(width/2 - 100));

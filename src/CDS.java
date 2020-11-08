@@ -2,9 +2,10 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.*;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
@@ -12,10 +13,12 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Random;
 import java.util.concurrent.*;
 
 public class CDS {
+
+    private static final int TEMPS_MAX = 60 * 10; // (sec) Temps d'execution maximal
+    private double debut_iteration;
 
     public class Simulation extends Thread {
         private int n;
@@ -23,6 +26,7 @@ public class CDS {
         private ArrayList<Point> points;
         private int edgeThreshold;
         private ArrayList<Point> result;
+
 
         ArrayList<Point> getResult() {return result;}
 
@@ -35,7 +39,9 @@ public class CDS {
             this.edgeThreshold = edgeThreshold;
         }
         public void run() {
+            //System.out.println("appele");
             result = replaceNred(n, old_result, points, edgeThreshold);
+            //System.out.println("termine");
         }
     }
 
@@ -47,11 +53,11 @@ public class CDS {
         ArrayList<Point> result = new ArrayList<Point>();
         boolean readFromFile = false;
         boolean enhance = true;
-        int number_of_threads = 4;
+        //int number_of_threads = 4;
 
-        if (readFromFile) result = readFromFile("output73.points");
+        if (readFromFile) result = readFromFile("output57.points");
 
-
+        double start = System.currentTimeMillis();
         if(!readFromFile){
             while (!rest.isEmpty()){
                 Point kimK=rest.get(0);
@@ -67,17 +73,24 @@ public class CDS {
             }
         }
         int score = result.size();
+        double end = System.currentTimeMillis();
+        System.out.println("Glouton : " + ((end - start)/1000) + " sec");
 
-
+        /*
+        start = System.currentTimeMillis();
         LinkedList<Steiner.Arete> steiner = new Steiner().calculSteiner(points, edgeThreshold, result);
+        end = System.currentTimeMillis();
+        System.out.println("fin steiner : " + ((end - start)/1000) + " sec");
+
         final LinkedList<Steiner.Arete> steiner_final = (LinkedList<Steiner.Arete>) steiner.clone();
-        final int score_final = score;
         Platform.runLater(new Runnable() {
             @Override public void run() {
-                ResultDisplay.display_li_al(steiner_final, score_final);
+                ResultDisplay.display_li_al(steiner_final);
             }
         });
         //ResultDisplay.display_li_al(steiner);
+        
+         */
         /*
         final LinkedList<Steiner.Arete> steiner_final = (LinkedList<Steiner.Arete>) steiner.clone();
         new Thread(() -> {
@@ -101,19 +114,31 @@ public class CDS {
 
         int np = Runtime.getRuntime().availableProcessors();
 
+        start = System.currentTimeMillis();
+
+        double moyenne_temps_amelioration = 0;
+
         if(enhance) {
-            System.out.println("Score : "+result.size());
+            //System.out.println("Score : "+result.size());
 
             int essais = 0;
             int reussites = 0;
             int n = 3;
-            while(result.size() > 8) {
-                while((essais < (300/np)) || (reussites / essais > 0.05)) {
-                    System.out.println("n = " + n);
-                    System.out.println("essais = " + essais);
-                    System.out.println("reussites = " + reussites);
-                    System.out.println("--- --- ---");
-                    //result = replaceNred(n, result, points, edgeThreshold);
+
+            this.debut_iteration = System.currentTimeMillis();
+
+            while((essais < (300/np)) || (reussites / essais > 0.05)) {
+                //System.out.println("n = " + n);
+                //System.out.println("essais = " + essais);
+                //System.out.println("reussites = " + reussites);
+                //System.out.println("--- --- ---");
+                //result = replaceNred(n, result, points, edgeThreshold);
+
+
+
+                // On bloque n à 3
+                //n = 3;
+                //np = 1;
 
 
 
@@ -121,77 +146,115 @@ public class CDS {
 
 
 
-                    ThreadGroup tg = new ThreadGroup("main");
 
-                    List<Simulation> sims = new ArrayList<Simulation>();
-                    for (int i=0;i<np;i++) sims.add(new Simulation(n, result, points, edgeThreshold,"PI"+i, tg));
+                ThreadGroup tg = new ThreadGroup("main");
 
-                    int i=0;
-                    while (i<sims.size()){
-                        if (tg.activeCount()<np){ // do we have available CPUs?
-                            Simulation sim = sims.get(i);
-                            sim.start();
-                            i++;
-                        } else {
-                            try {Thread.sleep(100);} /*wait 0.1 second before checking again*/
-                            catch (InterruptedException e) {e.printStackTrace();}
-                        }
+                List<Simulation> sims = new ArrayList<Simulation>();
+                for (int i=0;i<np;i++) sims.add(new Simulation(n, result, points, edgeThreshold,"PI"+i, tg));
 
-                    }
-
-                    // on ne va pas attendre que tous les threads terminent pour commencer à récupérer les résultats
-                    /*
-                    while(tg.activeCount()>0) { // wait for threads to finish
-                        try {Thread.sleep(100);}
+                int i=0;
+                while (i<sims.size()){
+                    if (tg.activeCount()<np){ // do we have available CPUs?
+                        Simulation sim = sims.get(i);
+                        sim.start();
+                        i++;
+                    } else {
+                        try {Thread.sleep(100);} /*wait 0.1 second before checking again*/
                         catch (InterruptedException e) {e.printStackTrace();}
                     }
-                    */
 
-                    while(tg.activeCount()>0){
-                        for (i=0;i<sims.size();i++) {
-                            Simulation sim = sims.get(i);
-                            ArrayList<Point> sim_result = sim.getResult();
-                            if(sim_result != null && sim_result.size() < result.size()){
-                                result = sim_result;
-                                for(Simulation sim_to_stop : sims){
-                                    sim_to_stop.stop();
-                                }
+                }
+
+                // on ne va pas attendre que tous les threads terminent pour commencer à récupérer les résultats
+                /*
+                while(tg.activeCount()>0) { // wait for threads to finish
+                    try {Thread.sleep(100);}
+                    catch (InterruptedException e) {e.printStackTrace();}
+                }
+                */
+
+                while(tg.activeCount()>0){
+                    for (i=0;i<sims.size();i++) {
+                        Simulation sim = sims.get(i);
+                        ArrayList<Point> sim_result = sim.getResult();
+                        if(sim_result != null && sim_result.size() < result.size()){
+                            result = sim_result;
+                            for(Simulation sim_to_stop : sims){
+                                sim_to_stop.stop();
                             }
                         }
                     }
-
-
-
-
-
-
-
-
-                    essais++;
-                    if(result.size() < score) {
-                        reussites++;
-                        steiner = new Steiner().calculSteiner(points, edgeThreshold, result);
-                        final LinkedList<Steiner.Arete> steiner_final2 = (LinkedList<Steiner.Arete>) steiner.clone();
-                        final int score_final2 = score;
-                        Platform.runLater(new Runnable() {
-                            @Override public void run() {
-                                ResultDisplay.display_li_al(steiner_final2, score_final2);
-                            }
-                        });
-                        saveToFile("output",result);
-                    }
-                    score = result.size();
                 }
-                essais = 0;
-                reussites = 0;
-                n++;
+
+
+
+
+
+
+
+
+                essais++;
+                boolean reussi = false;
+                if(result.size() < score) {
+                    reussites++;
+
+                    reussi = true;
+
+
+
+                    Date date = Calendar.getInstance().getTime();
+                    DateFormat dateFormat = new SimpleDateFormat("hh:mm:ss");
+                    String strDate = dateFormat.format(date);
+
+                    System.out.println(strDate + " " + result.size());
+
+                    /*
+                    ArrayList<Point> finalResult = result;
+                    Platform.runLater(new Runnable() {
+                        @Override public void run() {
+                            final LinkedList<Steiner.Arete> steiner_final2 = new Steiner().calculSteiner(points, edgeThreshold, finalResult);
+                            ResultDisplay.display_li_al(steiner_final2);
+                        }
+                    });
+                    */
+                    //saveToFile("output",result);
+                }
+                score = result.size();
+
+                double fin_iteration = System.currentTimeMillis();
+
+                // Si il commence à y avoir un vrai ralentissement
+                if(reussites > 0 && essais > 0 && (fin_iteration - debut_iteration) > (moyenne_temps_amelioration * 3 + (1000 * 60))){
+                    break;
+                }
+                //System.out.println((fin_iteration - debut_iteration) + " " + moyenne_temps_amelioration + " " + (moyenne_temps_amelioration * 3 + (1000 * 60)));
+
+                if(!(essais < (300/np)) || (reussites / essais > 0.05)){
+                    n++;
+                    essais = 0;
+                    reussites = 0;
+                }
+
+
+                end = System.currentTimeMillis();
+                if((end - start) > (TEMPS_MAX * 1000)) {
+                    break;
+                }
+
+                if(reussi) {
+                    moyenne_temps_amelioration = ((moyenne_temps_amelioration * essais) + (fin_iteration - debut_iteration)) / (essais + 1);
+                    debut_iteration = System.currentTimeMillis();
+                }
             }
+
         }
 
 
 
 
-        System.out.println("fin");
+
+
+        //System.out.println("fin");
 
 
         //saveToFile("output",result);
@@ -303,9 +366,9 @@ public class CDS {
         int score = old_result.size();
         Random random = new Random();
 
-        System.out.println("new_result.size() : " + new_result.size());
-        System.out.println("score : " + score);
-        System.out.println("new_result.size() >= score : " + (new_result.size() >= score));
+        //System.out.println("new_result.size() : " + new_result.size());
+        //System.out.println("score : " + score);
+        //System.out.println("new_result.size() >= score : " + (new_result.size() >= score));
 
         int tentatives = 0;
         while(!(new_result.size() < score) && (tentatives++ < 20)) {
@@ -314,10 +377,11 @@ public class CDS {
             int iterations = 0;// Pour éviter que ça boucle à l'infini si on est dans une mauvaise situation
             while(red_to_replace.size() < n) {
                 if(iterations++ > 100*n*n) {
-                    System.out.println("blocage : " + (iterations-1));
-                    System.out.println("n : " + n);
-                    System.out.println(red_to_replace);
+                    //System.out.println("blocage : " + (iterations-1));
+                    //System.out.println("n : " + n);
+                    //System.out.println(red_to_replace);
                     //return red_to_replace;
+                    if((System.currentTimeMillis() - debut_iteration) > 1000*120) return old_result;
                     red_to_replace.clear();
                     iterations = 0;
                 }
@@ -347,14 +411,29 @@ public class CDS {
             }
             //System.out.println("--");
 
+
+            int finalX_min = x_min;
+            int finalX_max = x_max;
+            int finalY_min = y_min;
+            int finalY_max = y_max;
+            /*
+            Platform.runLater(new Runnable() {
+                @Override public void run() {
+                    //final LinkedList<Steiner.Arete> steiner_final2 = new Steiner().calculSteiner(points, edgeThreshold, finalResult);
+                    ResultDisplay.display_rectangle(finalX_min, finalX_max, finalY_min, finalY_max);
+                }
+            });
+            */
+
+
             // on récupere tous les points possibles
             ArrayList<Point> possible_blue_to_red = new ArrayList<>();
             for(Point p : points) {
                 if(
                         p.x >= (x_min - edgeThreshold)
-                                &&	p.x <= (x_max + edgeThreshold)
-                                &&	p.y >= (y_min - edgeThreshold)
-                                &&	p.y <= (y_max + edgeThreshold)
+                    &&	p.x <= (x_max + edgeThreshold)
+                    &&	p.y >= (y_min - edgeThreshold)
+                    &&	p.y <= (y_max + edgeThreshold)
                 ) {
                     possible_blue_to_red.add(p);
                 }
@@ -408,7 +487,7 @@ public class CDS {
                     }
                     iterations_recherche++;
                     // a supp
-                    if(iterations_recherche == n*n*1000) System.out.println("!! iterations recherche depassé : " + iterations_recherche);
+                    if(iterations_recherche == n*n*1000); //System.out.println("!! iterations recherche depassé : " + iterations_recherche);
                 }
 
                 ArrayList<Point> new_solution = (ArrayList<Point>) old_result.clone();

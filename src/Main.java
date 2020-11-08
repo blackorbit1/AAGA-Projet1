@@ -16,15 +16,21 @@ import java.util.concurrent.Executors;
 import static java.lang.Thread.sleep;
 
 public class Main {
+    private static final double FACTEUR = 1.8; // facteur multiplicatif de l'ecartement des points
+
     public static void main(String [] args){
-        ArrayList<Point> points = readPointsFromFile("/Users/enzoportable/Documents/AAGA/Projet1/input.points");
+        //ArrayList<Point> points = readPointsFromFile("/Users/enzoportable/Documents/AAGA/Projet1/test-2.points");
+
+        //int edgeThreshold = 55;
         int edgeThreshold = 55;
 
+/*
+        ArrayList<Point> points = GenerationPoints.get_points_set(200, (int) (edgeThreshold * 0.9), edgeThreshold);
 
 
         ResultDisplay.points = points;
         ResultDisplay.edgeThreshold = edgeThreshold;
-
+*/
 
 
         /////////////////////////////////
@@ -76,7 +82,13 @@ public class Main {
         /////////////////////////////////
 
         ////new Thread(() -> { Application.launch(ResultDisplay.class, args); }).start();
-        Application.launch(ResultDisplay.class, args);
+
+
+
+
+        //Application.launch(ResultDisplay.class, args);
+
+
 
         /*
         ArrayList<Point> hitPoints = (new CDS()).calculDominatingSet(points, edgeThreshold);
@@ -92,7 +104,8 @@ public class Main {
 
 
 
-        (new CDS()).calculDominatingSet(points, edgeThreshold);
+        //(new CDS()).calculDominatingSet(points, edgeThreshold);
+        tests(edgeThreshold);
 
     }
 
@@ -115,8 +128,8 @@ public class Main {
             String line = reader.readLine();
             while (line != null) {
                 try {
-                    int x = Integer.parseInt(line.split(" ")[0]);
-                    int y = Integer.parseInt(line.split(" ")[1]);
+                    int x = (int) (Integer.parseInt(line.split(" ")[0]) * FACTEUR);
+                    int y = (int) (Integer.parseInt(line.split(" ")[1]) * FACTEUR);
                     points.add(new Point(x, y));
                 } catch (Throwable e) {
                     continue;
@@ -130,6 +143,50 @@ public class Main {
         }
 
         return points;
+    }
+
+    private static void tests(int edgeThreshold){
+        System.out.println("début du test ..");
+        //ArrayList<Point> points = GenerationPoints.get_points_set(3000, edgeThreshold, edgeThreshold);
+        //ArrayList<Point> points = GenerationPoints.get_points_set(200, (int) (edgeThreshold * 0.9), edgeThreshold);
+
+        for(int taille = 500; taille < 3000; taille += 100){
+            for(int distance = 1; distance < 9; distance++){
+                int dist_calcule = (((int) (edgeThreshold * (distance * 0.1)))>0)?((int) (edgeThreshold * (distance * 0.1))):2;
+                System.out.println("-----------------------");
+                System.out.println("taille : " + taille);
+                System.out.println("distance : " + dist_calcule);
+                ArrayList<Point> points = GenerationPoints.get_points_set(taille, dist_calcule, edgeThreshold);
+
+                /*
+                ResultDisplay.points = points;
+                ResultDisplay.edgeThreshold = edgeThreshold;
+                Application.launch(ResultDisplay.class, null);
+                */
+
+                double start_total = System.currentTimeMillis();
+
+                ArrayList<Point> resultat = (new CDS()).calculDominatingSet(points, edgeThreshold);
+                double start = System.currentTimeMillis();
+                LinkedList<Steiner.Arete> steiner = new Steiner().calculSteiner(points, edgeThreshold, resultat);
+                double end = System.currentTimeMillis();
+                System.out.println("Steiner : " + ((end - start)/1000) + " sec");
+
+                double end_total = System.currentTimeMillis();
+                System.out.println("Total : " + ((end_total - start_total)/1000) + " sec");
+                System.out.println("Score DS : " + resultat.size());
+
+
+                ArrayList<Point> points_cds = new ArrayList<Point>();
+                for(Steiner.Arete arete : steiner){
+                    if(!points_cds.contains(arete.p1)) points_cds.add(arete.p1);
+                    if(!points_cds.contains(arete.p2)) points_cds.add(arete.p2);
+                }
+                System.out.println("Score CDS : " + points_cds.size());
+
+            }
+        }
+
     }
 
 
